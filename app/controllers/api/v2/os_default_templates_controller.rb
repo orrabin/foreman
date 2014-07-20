@@ -26,10 +26,8 @@ module Api
       end
 
       def_param_group :os_default_template do
-        param :os_default_template, Hash, :action_aware => true do
-          param :template_kind_id, :number
-          param :config_template_id, :number
-        end
+        param :template_kind_id, :number
+        param :config_template_id, :number
       end
 
       api :POST, '/operatingsystems/:operatingsystem_id/os_default_templates/', 'Create a os default template for operating system'
