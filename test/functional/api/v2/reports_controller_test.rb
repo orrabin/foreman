@@ -13,21 +13,21 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
 
     def test_create_valid
       User.current=nil
-      post :create, {:report => create_a_puppet_transaction_report }, set_session_user
+      post :create, {create_a_puppet_transaction_report }, set_session_user
       assert_response :success
     end
 
     def test_create_invalid
       User.current=nil
-      post :create, {:report => ["not a hash", "throw an error"]  }, set_session_user
+      post :create, {["not a hash", "throw an error"]  }, set_session_user
       assert_response :unprocessable_entity
     end
 
     def test_create_duplicate
       User.current=nil
-      post :create, {:report => create_a_puppet_transaction_report }, set_session_user
+      post :create, { create_a_puppet_transaction_report }, set_session_user
       assert_response :success
-      post :create, {:report => create_a_puppet_transaction_report }, set_session_user
+      post :create, {create_a_puppet_transaction_report }, set_session_user
       assert_response :unprocessable_entity
     end
 
@@ -36,7 +36,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       SETTINGS[:require_ssl] = false
 
       Resolv.any_instance.stubs(:getnames).returns(['else.where'])
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, { create_a_puppet_transaction_report }
       assert_nil @controller.detected_proxy
       assert_response :success
     end
@@ -48,7 +48,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       proxy = smart_proxies(:puppetmaster)
       host   = URI.parse(proxy.url).host
       Resolv.any_instance.stubs(:getnames).returns([host])
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, { create_a_puppet_transaction_report }
       assert_equal proxy, @controller.detected_proxy
       assert_response :success
     end
@@ -58,7 +58,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       Setting[:require_ssl_puppetmasters] = false
 
       Resolv.any_instance.stubs(:getnames).returns(['another.host'])
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, { create_a_puppet_transaction_report }
       assert_equal 403, @response.status
     end
 
@@ -69,7 +69,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       @request.env['HTTPS'] = 'on'
       @request.env['SSL_CLIENT_S_DN'] = 'CN=else.where'
       @request.env['SSL_CLIENT_VERIFY'] = 'SUCCESS'
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, { create_a_puppet_transaction_report }
       assert_response :success
     end
 
@@ -80,7 +80,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       @request.env['HTTPS'] = 'on'
       @request.env['SSL_CLIENT_S_DN'] = 'CN=another.host'
       @request.env['SSL_CLIENT_VERIFY'] = 'SUCCESS'
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, { create_a_puppet_transaction_report }
       assert_equal 403, @response.status
     end
 
@@ -91,7 +91,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       @request.env['HTTPS'] = 'on'
       @request.env['SSL_CLIENT_S_DN'] = 'CN=else.where'
       @request.env['SSL_CLIENT_VERIFY'] = 'FAILED'
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, { create_a_puppet_transaction_report }
       assert_equal 403, @response.status
     end
 
@@ -101,7 +101,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       SETTINGS[:require_ssl] = true
 
       Resolv.any_instance.stubs(:getnames).returns(['else.where'])
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, {create_a_puppet_transaction_report }
       assert_equal 403, @response.status
     end
 
@@ -112,7 +112,7 @@ class Api::V2::ReportsControllerTest < ActionController::TestCase
       SETTINGS[:require_ssl] = false
 
       Resolv.any_instance.stubs(:getnames).returns(['else.where'])
-      post :create, {:report => create_a_puppet_transaction_report }
+      post :create, { create_a_puppet_transaction_report }
       assert_response :success
     end
   end
