@@ -46,8 +46,16 @@ module Classification
           if values[key_id][name].nil?
             values[key_id][name] = {:value => value.value, :element => element}
           else
-            if key.path.index(element) < key.path.index(values[key_id][name][:element])
-              values[key_id][name] = {:value => value.value, :element => element}
+            if (key.key_type == "array" && key.continue_looking)
+              if (!values[key_id][name][:element].is_a?(Array))
+                values[key_id][name][:element] = Array.wrap(values[key_id][name][:element])
+              end
+              values[key_id][name][:value] += value.value
+              values[key_id][name][:element] << element
+            else
+              if key.path.index(element) < key.path.index(values[key_id][name][:element])
+                values[key_id][name] = {:value => value.value, :element => element}
+              end
             end
           end
         end

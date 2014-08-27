@@ -81,6 +81,30 @@ class ClassificationTest < ActiveSupport::TestCase
     assert_equal({pc.name => {lkey.key => 'overridden value'}}, classparam.enc)
   end
 
+  test 'enc with continue_search should return lookup_value array' do
+    key   = lookup_keys(:continue_looking)
+    host = hosts(:one)
+    assert_equal taxonomies(:location1), host.location
+    assert_equal taxonomies(:organization1), host.organization
+
+    value = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "location=#{taxonomies(:location1)}",
+                          :value => ['test']
+    end
+    value2 = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "organization=#{taxonomies(:organization1)}",
+                          :value => ['test2']
+    end
+    enc = classification.enc
+
+    key.reload
+
+    assert_equal({key.id => {key.key => { :value => value2.value + value.value, :element => Array.wrap(['organization', 'location'])}}},
+                 classification.send(:values_hash))
+  end
+
   private
 
   attr_reader :classification

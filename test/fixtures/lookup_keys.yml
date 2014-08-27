@@ -76,3 +76,13 @@ seven:
   path: 'organization,location'
   override: true
   is_param: true
+
+continue_looking:
+  key: cluster2
+  key_type: array
+  continue_looking: true
+  validator_rule:
+  default_value: 'secret2'
+  override: true
+  path: "organization\nlocation"
+  is_param: true

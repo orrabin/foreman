@@ -25,6 +25,9 @@
     <%= text_f f, :validator_rule, :size => "col-md-8", :disabled => f.object.validator_type.blank? %>
 
     <legend><%= _("Override value for specific hosts") %></legend>
+    <%= checkbox_f(f, :continue_looking, :disabled => f.object.key_type != "array", :size => "col-md-8",
+                   :help_block => _("Should the matchers continue to look for matches after first find (only array type).")
+        ) if is_param%>
     <%= textarea_f f, :path, :rows => :auto, :label => _("Order"), :size => "col-md-8", :value => f.object.path,
                    :help_block => popover(_("The order in which values are resolved"),
                                           _("The order in which matchers keys are processed, first match wins.<br> You may use multiple attributes as a matcher key, for example, an order of <code>host group, environment</code> would expect a matcher such as <code>hostgroup = \"web servers\", environment = production</code>"), :title => _("The order in which values are resolved")).html_safe
