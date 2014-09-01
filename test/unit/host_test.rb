@@ -485,7 +485,7 @@ context "location or organizations are not enabled" do
       "parameters"=> {"puppetmaster"=>"puppet", "MYVAR"=>"value", "port" => "80",
         "ssl_port" => "443", "foreman_env"=> "production", "owner_name"=>"Admin User",
         "root_pw"=>"xybxa6JUkz63w", "owner_email"=>"admin@someware.com"},
-      "classes"=>{"apache"=>{"custom_class_param"=>"abcdef"}, "base"=>{"cluster"=>"secret", "cluster2"=>"secret2"}} }
+      "classes"=>{"apache"=>{"custom_class_param"=>"abcdef"}, "base"=>{"cluster"=>"secret", "cluster2"=>"secret2", "hash_test"=>{}}} }
 
     host.importNode nodeinfo
     nodeinfo["parameters"]["special_info"] = "secret"  # smart variable on apache

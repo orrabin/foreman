@@ -35,6 +35,7 @@ module Classification
 
     def values_hash options={}
       values = {}
+      values_for_deep_merge = {}
       path2matches.each do |match|
         LookupValue.where(:match => match).where(:lookup_key_id => class_parameters.map(&:id)).each do |value|
           key_id = value.lookup_key_id
@@ -45,18 +46,58 @@ module Classification
           next if options[:skip_fqdn] && element=="fqdn"
           if values[key_id][name].nil?
             values[key_id][name] = {:value => value.value, :element => element}
+            if (key.continue_looking && key.key_type == "hash")
+              values_for_deep_merge[key_id] ||= {}
+              values_for_deep_merge[key_id][name] = [{:value => value.value, :index => key.path.index(element), :element => element}]
+            end
           else
-            if (key.key_type == "array" && key.continue_looking)
+            if (key.continue_looking)
               if (!values[key_id][name][:element].is_a?(Array))
                 values[key_id][name][:element] = Array.wrap(values[key_id][name][:element])
               end
-              values[key_id][name][:value] += value.value
-              values[key_id][name][:element] << element
+              case key.key_type
+                when "array"
+                  values[key_id][name][:value] += value.value
+                  values[key_id][name][:element] << element
+                when "hash"
+                  values_for_deep_merge[key_id][name] += [{:value => value.value, :index => key.path.index(element), :element => element}]
+              end
             else
               if key.path.index(element) < key.path.index(values[key_id][name][:element])
                 values[key_id][name] = {:value => value.value, :element => element}
               end
             end
+          end
+        end
+      end
+      unless values_for_deep_merge.empty?
+        values.merge!(hash_deep_merge(values_for_deep_merge))
+      end
+      values
+    end
+
+    def hash_deep_merge(hash)
+      values = {}
+      hash.each do |key|
+        key_id = key[0]
+        name = key[1].keys[0]
+        values[key_id] = {}
+        key[1].values[0].sort_by! {|value| -1 * value[:index]}
+        key[1].values[0].each do |value|
+          if values[key_id][name].nil?
+            values[key_id][name] = {:value => value[:value], :element => [value[:element]]}
+          else
+            values[key_id][name][:value].deep_merge!(value[:value])
+            values[key_id][name][:element] << value[:element]
+            # This was an attempt to handle element to only show the elements that won in the merge
+            # merged_hash = values[key_id][name][:value].deep_merge(value[:value])
+            # if (merged_hash != values[key_id][name][:value].merge(value[:value]))
+            #   values[key_id][name][:element] << value[:element]
+            # else
+            #   values[key_id][name][:element] = [value[:element]]
+            # end
+            # values[key_id][name][:value] = merged_hash
+
           end
         end
       end

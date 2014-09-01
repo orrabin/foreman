@@ -81,8 +81,8 @@ class ClassificationTest < ActiveSupport::TestCase
     assert_equal({pc.name => {lkey.key => 'overridden value'}}, classparam.enc)
   end
 
-  test 'enc with continue_search should return lookup_value array' do
-    key   = lookup_keys(:continue_looking)
+  test 'lookup_key of array with continue_search should return lookup_value array' do
+    key   = lookup_keys(:continue_looking_array)
     host = hosts(:one)
     assert_equal taxonomies(:location1), host.location
     assert_equal taxonomies(:organization1), host.organization
@@ -102,6 +102,119 @@ class ClassificationTest < ActiveSupport::TestCase
     key.reload
 
     assert_equal({key.id => {key.key => { :value => value2.value + value.value, :element => Array.wrap(['organization', 'location'])}}},
+                 classification.send(:values_hash))
+  end
+
+  test 'lookup_key of hash in hash with continue_search should return lookup_value hash with array of elements' do
+    key   = lookup_keys(:continue_looking_hash)
+    host = hosts(:one)
+    assert_equal taxonomies(:location1), host.location
+    assert_equal taxonomies(:organization1), host.organization
+
+    value = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "location=#{taxonomies(:location1)}",
+                          :value => { :example => { :a => 'test' } }
+    end
+    value2 = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "organization=#{taxonomies(:organization1)}",
+                          :value => { :example => { :b => 'test2' } }
+    end
+    enc = classification.enc
+
+    key.reload
+
+    assert_equal({key.id => {key.key => { :value => { :example => { :a => 'test', :b => 'test2' } }, :element => Array.wrap(['location', 'organization'])}}},
+                 classification.send(:values_hash))
+  end
+
+  test 'lookup_key of hash with continue_search should return lookup_value hash with one element' do
+    key   = lookup_keys(:continue_looking_hash)
+    host = hosts(:one)
+    assert_equal taxonomies(:location1), host.location
+    assert_equal taxonomies(:organization1), host.organization
+
+    value = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "organization=#{taxonomies(:organization1)}",
+                          :value => { :example => 'test2' }
+    end
+
+    value2 = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "location=#{taxonomies(:location1)}",
+                          :value => { :example => 'test' }
+    end
+
+    enc = classification.enc
+
+    key.reload
+
+    assert_equal({key.id => {key.key => { :value => value.value, :element => ['organization'] }}},
+                 classification.send(:values_hash))
+
+  end
+
+  test 'lookup_key of hash with continue_search and priority should obey priority' do
+    key   = lookup_keys(:continue_looking_hash)
+    host = hosts(:one)
+    assert_equal taxonomies(:location1), host.location
+    assert_equal taxonomies(:organization1), host.organization
+
+    value = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "location=#{taxonomies(:location1)}",
+                          :value =>  { :a => 'test' }
+    end
+    value2 = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "organization=#{taxonomies(:organization1)}",
+                          :value => { :example => { :b => 'test2' } }
+    end
+
+    value3 = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "os=#{host.operatingsystem}",
+                          :value => { :example => {:b => 'test3'} }
+    end
+
+    enc = classification.enc
+
+    key.reload
+
+    assert_equal({key.id => {key.key => { :value => {:a => 'test', :example => { :b => 'test2' }}, :element => ['location', 'organization'] }}},
+                 classification.send(:values_hash))
+  end
+
+  test 'lookup_key of hash with continue_search and priority should return lookup_value hash with array of elements' do
+    key   = lookup_keys(:continue_looking_hash)
+    host = hosts(:one)
+    assert_equal taxonomies(:location1), host.location
+    assert_equal taxonomies(:organization1), host.organization
+
+    value = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "location=#{taxonomies(:location1)}",
+                          :value => { :example => { :a => 'test' } }
+    end
+    value2 = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "organization=#{taxonomies(:organization1)}",
+                          :value => { :example => { :b => 'test2' } }
+    end
+
+    value3 = as_admin do
+      LookupValue.create! :lookup_key_id => key.id,
+                          :match => "os=#{host.operatingsystem}",
+                          :value => { :example => {:a => 'test3'} }
+    end
+
+    enc = classification.enc
+
+    key.reload
+
+    assert_equal({key.id => {key.key => { :value => { :example => {:a => 'test3', :b => 'test2' }}, :element => ['os', 'organization'] }}},
                  classification.send(:values_hash))
   end
 

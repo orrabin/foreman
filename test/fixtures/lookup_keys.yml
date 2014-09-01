@@ -77,7 +77,7 @@ seven:
   override: true
   is_param: true
 
-continue_looking:
+continue_looking_array:
   key: cluster2
   key_type: array
   continue_looking: true
@@ -85,4 +85,14 @@ continue_looking:
   default_value: 'secret2'
   override: true
   path: "organization\nlocation"
+  is_param: true
+
+continue_looking_hash:
+  key: hash_test
+  key_type: hash
+  continue_looking: true
+  validator_rule:
+  default_value: --- {}
+  override: true
+  path: "organization\nos\nlocation"
   is_param: true

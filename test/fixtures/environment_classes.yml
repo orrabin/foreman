@@ -57,4 +57,9 @@ nine:
 ten:
   puppetclass: one
   environment: production
-  lookup_key: continue_looking
+  lookup_key: continue_looking_array
+
+eleven:
+  puppetclass: one
+  environment: production
+  lookup_key: continue_looking_hash
