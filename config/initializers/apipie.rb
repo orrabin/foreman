@@ -19,7 +19,8 @@ Apipie.configure do |config|
   config.checksum_path = ['/api/', '/apidoc/']
 end
 
-# check apipie cache in dev mode
+# check apipie cache in dev mod
+rake_name = Rails.env.production? ? 'forman-rake apipie:cache' : 'rake apipie:cache'
 if Apipie.configuration.use_cache
   cache_name = File.join(Apipie.configuration.cache_dir, Apipie.configuration.doc_base_url + '.json')
   if File.exists? cache_name
@@ -30,13 +31,13 @@ if Apipie.configuration.use_cache
       Find.find(path) { |e| t = File.mtime(e); max = t if t > max } if File.exists?(path)
     end
     if max > target
-      puts "API controllers newer than Apipie cache! Run 'rake apipie:cache' to regenerate cache."
+      puts "API controllers newer than Apipie cache! Run '#{rake_name}' to regenerate cache."
     end
   else
-    puts "Apipie cache enabled but not present yet. Run 'rake apipie:cache' to speed up API calls."
+    puts "Apipie cache enabled but not present yet. Run '#{rake_name}' to speed up API calls."
   end
 else
-  puts "The Apipie cache is turned off. Enable it and run 'rake apipie:cache' to speed up API calls."
+  puts "The Apipie cache is turned off. Enable it and run '#{rake_name}' to speed up API calls."
 end
 
 # special type of validator: we say that it's not specified
