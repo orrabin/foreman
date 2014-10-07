@@ -35,6 +35,7 @@ module Classification
 
     def values_hash(options = {})
       values = {}
+      values_for_deep_merge = {}
       path2matches.each do |match|
         LookupValue.where(:match => match).where(:lookup_key_id => class_parameters.map(&:id)).each do |value|
           key_id = value.lookup_key_id
@@ -43,13 +44,61 @@ module Classification
           name = key.to_s
           element = match.split(LookupKey::EQ_DELM).first
           element_name = match.split(LookupKey::EQ_DELM).last
-          next if options[:skip_fqdn] && element=="fqdn"
+          next if (options[:skip_fqdn] && element=="fqdn") || key.path.index(element).nil?
           if values[key_id][name].nil?
             values[key_id][name] = {:value => value.value, :element => element, :element_name => element_name}
           else
-            if key.path.index(element) < key.path.index(values[key_id][name][:element])
-              values[key_id][name] = {:value => value.value, :element => element}
+            if (key.merge_overrides)
+              if (!values[key_id][name][:element].is_a?(Array))
+                values[key_id][name][:element] = Array.wrap(values[key_id][name][:element])
+                values[key_id][name][:element_name] = Array.wrap(values[key_id][name][:element_name])
+              end
+              case key.key_type
+                when "array"
+                  if key.avoid_duplicates
+                    values[key_id][name][:value] |= value.value
+                  else
+                    values[key_id][name][:value] += value.value
+                  end
+                  values[key_id][name][:element] << element
+                  values[key_id][name][:element_name] << element_name
+                when "hash"
+                  values_for_deep_merge[key_id] ||= {}
+                  values_for_deep_merge[key_id][name] ||= [{:value => values[key_id][name][:value],
+                                                            :index => key.path.index(values[key_id][name][:element].first),
+                                                            :element => values[key_id][name][:element].first,
+                                                            :element_name => values[key_id][name][:element_name].first}]
+                  values_for_deep_merge[key_id][name] += [{:value => value.value, :index => key.path.index(element),
+                                                           :element => element, :element_name => element_name}]
+              end
+            else
+              if key.path.index(element) < key.path.index(values[key_id][name][:element])
+                values[key_id][name] = {:value => value.value, :element => element, :element_name => element_name}
+              end
             end
+          end
+        end
+      end
+      unless values_for_deep_merge.empty?
+        values.merge!(hash_deep_merge(values_for_deep_merge))
+      end
+      values
+    end
+
+    def hash_deep_merge(hash)
+      values = {}
+      hash.each do |key|
+        key_id = key[0]
+        name = key[1].keys[0]
+        values[key_id] = {}
+        sorted_values = key[1].values[0].sort_by {|value| -1 * value[:index]}
+        sorted_values.each do |value|
+          if values[key_id][name].nil?
+            values[key_id][name] = {:value => value[:value], :element => [value[:element]], :element_name => [value[:element_name]]}
+          else
+            values[key_id][name][:value].deep_merge!(value[:value])
+            values[key_id][name][:element] << value[:element]
+            values[key_id][name][:element_name] << value[:element_name]
           end
         end
       end

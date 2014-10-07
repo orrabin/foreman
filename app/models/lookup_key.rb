@@ -40,7 +40,7 @@ class LookupKey < ActiveRecord::Base
   validates :key_type, :inclusion => {:in => KEY_TYPES, :message => N_("invalid")}, :allow_blank => true, :allow_nil => true
   validate :validate_list, :validate_regexp
   validates_associated :lookup_values
-  validate :ensure_type
+  validate :ensure_type, :disable_merge_overrides, :disable_avoid_duplicates
 
   before_save :sanitize_path
   attr_name :key
@@ -95,6 +95,14 @@ class LookupKey < ActiveRecord::Base
 
   def is_smart_class_parameter?
     is_param? && environment_classes.any?
+  end
+
+  def supports_merge?
+    ['array', 'hash'].include?(key_type)
+  end
+
+  def supports_uniq?
+    key_type == 'array'
   end
 
   def to_param
@@ -277,6 +285,18 @@ class LookupKey < ActiveRecord::Base
   def validate_list
     return true unless (validator_type == 'list')
     errors.add(:default_value, _("%{default_value} is not one of %{validator_rule}") % { :default_value => default_value, :validator_rule => validator_rule }) and return false unless validator_rule.split(KEY_DELM).map(&:strip).include?(default_value)
+  end
+
+  def disable_merge_overrides
+    if merge_overrides && !supports_merge?
+      self.errors.add(:merge_overrides, _("can only be set for array or hash"))
+    end
+  end
+
+  def disable_avoid_duplicates
+    if avoid_duplicates && (!merge_overrides || !supports_uniq?)
+      self.errors.add(:avoid_duplicates, _("can only be set for arrays that have merge_overrides set to true"))
+    end
   end
 
 end
