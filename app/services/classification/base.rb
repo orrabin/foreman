@@ -1,11 +1,13 @@
 module Classification
   class Base
+    require 'ostruct'
+
     delegate :hostgroup, :environment_id, :puppetclass_ids, :classes,
              :to => :host
 
-    def initialize(args = { })
+    def initialize(args = {})
       @host = args[:host]
-      @safe_render = SafeRender.new(:variables => { :host => host } )
+      @safe_render = SafeRender.new(:variables => {:host => host})
     end
 
     #override to return the relevant enc data and format
@@ -35,74 +37,82 @@ module Classification
 
     def values_hash(options = {})
       values = {}
-      values_for_deep_merge = {}
-      path2matches.each do |match|
-        LookupValue.where(:match => match).where(:lookup_key_id => class_parameters.map(&:id)).each do |value|
-          key_id = value.lookup_key_id
-          values[key_id] ||= {}
-          key = class_parameters.detect{|k| k.id == value.lookup_key_id }
-          name = key.to_s
-          element = match.split(LookupKey::EQ_DELM).first
-          element_name = match.split(LookupKey::EQ_DELM).last
-          next if (options[:skip_fqdn] && element=="fqdn") || key.path.index(element).nil?
-          if values[key_id][name].nil?
-            values[key_id][name] = {:value => value.value, :element => element, :element_name => element_name}
-          else
-            if (key.merge_overrides)
-              if (!values[key_id][name][:element].is_a?(Array))
-                values[key_id][name][:element] = Array.wrap(values[key_id][name][:element])
-                values[key_id][name][:element_name] = Array.wrap(values[key_id][name][:element_name])
-              end
-              case key.key_type
-                when "array"
-                  if key.avoid_duplicates
-                    values[key_id][name][:value] |= value.value
-                  else
-                    values[key_id][name][:value] += value.value
-                  end
-                  values[key_id][name][:element] << element
-                  values[key_id][name][:element_name] << element_name
-                when "hash"
-                  values_for_deep_merge[key_id] ||= {}
-                  values_for_deep_merge[key_id][name] ||= [{:value => values[key_id][name][:value],
-                                                            :index => key.path.index(values[key_id][name][:element].first),
-                                                            :element => values[key_id][name][:element].first,
-                                                            :element_name => values[key_id][name][:element_name].first}]
-                  values_for_deep_merge[key_id][name] += [{:value => value.value, :index => key.path.index(element),
-                                                           :element => element, :element_name => element_name}]
-              end
-            else
-              if key.path.index(element) < key.path.index(values[key_id][name][:element])
-                values[key_id][name] = {:value => value.value, :element => element, :element_name => element_name}
-              end
-            end
+      all_lookup_values = LookupValue.where(:match => path2matches).where(:lookup_key_id => class_parameters.pluck(:id))
+      class_parameters.each do |key|
+        lookup_values_for_key = all_lookup_values.where( :lookup_key_id => key.id)
+        sorted_lookup_values = lookup_values_for_key.sort_by { |lv| key.path.index(lv.match.split(LookupKey::EQ_DELM).first) }
+        value = nil
+        if key.merge_overrides
+          case key.key_type
+            when "array"
+              value = update_array_matcher(key.avoid_duplicates, sorted_lookup_values, options)
+            when "hash"
+              value = update_hash_matcher(sorted_lookup_values, options)
           end
+        else
+          value = update_generic_matcher(sorted_lookup_values, options)
         end
-      end
-      unless values_for_deep_merge.empty?
-        values.merge!(hash_deep_merge(values_for_deep_merge))
+
+        values[key.id] ||= {}
+        values[key.id][key.key] = value unless value.nil?
+
       end
       values
     end
 
-    def hash_deep_merge(hash)
-      values = {}
-      hash.each do |key|
-        key_id = key[0]
-        name = key[1].keys[0]
-        values[key_id] = {}
-        sorted_values = key[1].values[0].sort_by {|value| -1 * value[:index]}
-        sorted_values.each do |value|
-          if values[key_id][name].nil?
-            values[key_id][name] = {:value => value[:value], :element => [value[:element]], :element_name => [value[:element_name]]}
-          else
-            values[key_id][name][:value].deep_merge!(value[:value])
-            values[key_id][name][:element] << value[:element]
-            values[key_id][name][:element_name] << value[:element_name]
-          end
+    def update_generic_matcher(lookup_values, options)
+      if options[:skip_fqdn]
+        while lookup_values.present? && lookup_values.first.match.split(LookupKey::EQ_DELM).first == "fqdn"
+          lookup_values.delete_at(0)
         end
       end
-      values
+
+      if lookup_values.present?
+        lv = lookup_values.first
+        element, element_name = lv.match.split(LookupKey::EQ_DELM)
+        {:value => lv.value, :element => element,
+         :element_name =>element_name}
+      end
+    end
+
+    def update_array_matcher(should_avoid_duplicates, lookup_values, options)
+      elements = []
+      values = []
+      element_names = []
+
+      lookup_values.each do |lookup_value|
+        element, element_name = lookup_value.match.split(LookupKey::EQ_DELM)
+        next if (options[:skip_fqdn] && element=="fqdn")
+        elements << element
+        element_names << element_name
+        if should_avoid_duplicates
+          values |= lookup_value.value
+        else
+          values += lookup_value.value
+        end
+      end
+
+      {:value => values, :element => elements,
+       :element_name => element_names}
+    end
+
+    def update_hash_matcher(lookup_values, options)
+      elements = []
+      values = {}
+      element_names = []
+
+      # to make sure seep merge overrides by priority, putting in the values with the lower priority first
+      # and then merging with higher priority
+      lookup_values.reverse.each do |lookup_value|
+        element, element_name = lookup_value.match.split(LookupKey::EQ_DELM)
+        next if (options[:skip_fqdn] && element=="fqdn")
+        elements << element
+        element_names << element_name
+        values.deep_merge!(lookup_value.value)
+      end
+
+      {:value => values, :element => elements,
+       :element_name => element_names}
     end
 
     def value_of_key(key, values)
@@ -140,7 +150,7 @@ module Classification
         matches << match.join(LookupKey::KEY_DELM)
 
         hostgroup_matches.each do |hostgroup_match|
-          match[match.index{|m|m =~ /hostgroup\s*=/}]=hostgroup_match
+          match[match.index { |m| m =~ /hostgroup\s*=/ }]=hostgroup_match
           matches << match.join(LookupKey::KEY_DELM)
         end if Array.wrap(rule).include?("hostgroup") && Setting["host_group_matchers_inheritance"]
       end
@@ -155,7 +165,7 @@ module Classification
       # host parameter
       return host.host_params[element] if host.host_params.include?(element)
       # fact attribute
-      if (fn = host.fact_names.first(:conditions => { :name => element }))
+      if (fn = host.fact_names.first(:conditions => {:name => element}))
         return FactValue.where(:host_id => host.id, :fact_name_id => fn.id).first.value
       end
     end
