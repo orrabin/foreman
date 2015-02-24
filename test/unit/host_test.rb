@@ -475,8 +475,8 @@ class HostTest < ActiveSupport::TestCase
     test "should save if root password is undefined when the host is managed and in build mode" do
       Setting[:root_pass] = ''
       host = Host.new :name => "myfullhost", :managed => true, :build => false
-      host.valid?
-      refute host.errors[:root_pass].any?
+      refute host.valid?
+      assert host.errors[:root_pass].present?
     end
 
     test "should save if root password is undefined when the compute resource is image capable and in build mode" do
@@ -911,7 +911,7 @@ class HostTest < ActiveSupport::TestCase
       g.parent = p
       g.save
       assert h.save
-      assert_present h.root_pass
+      assert h.root_pass.present?
       assert_equal p.root_pass, h.root_pass
       assert_equal p.root_pass, h.read_attribute(:root_pass), 'should copy root_pass to host'
     end
@@ -921,7 +921,7 @@ class HostTest < ActiveSupport::TestCase
       h = FactoryGirl.create(:host, :managed)
       h.root_pass = nil
       assert h.save
-      assert_present h.root_pass
+      assert h.root_pass.present?
       assert_equal Setting[:root_pass], h.root_pass
       assert_equal Setting[:root_pass], h.read_attribute(:root_pass), 'should copy root_pass to host'
     end
@@ -933,7 +933,7 @@ class HostTest < ActiveSupport::TestCase
       h.root_pass = ""
       h.save
       assert_valid h
-      assert_present h.root_pass
+      assert h.root_pass.present?
       assert_equal Setting[:root_pass], h.root_pass
       assert_equal Setting[:root_pass], h.read_attribute(:root_pass), 'should copy root_pass to host'
     end
@@ -1271,7 +1271,7 @@ class HostTest < ActiveSupport::TestCase
         filter = FactoryGirl.build(:filter)
         filter.permissions = [ Permission.find_by_name('edit_hosts') ]
         filter.save!
-        role = Role.find_or_create_by_name :name => "testing_role"
+        role = Role.find_or_create_by :name => "testing_role"
         role.filters = [ filter ]
         role.save!
         @one.roles = [ role ]
