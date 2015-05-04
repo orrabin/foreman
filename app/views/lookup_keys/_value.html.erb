@@ -1,33 +1,31 @@
-<div class="fields matchers">
-
-  <table class="row form-group <%= 'has-error' if f.object.errors.any? %>">
-    <tbody>
-    <tr>
-      <td class="col-md-1">
+<% if is_template %>
+  <table>
+<% end %>
+    <tr class="fields matchers form-group <%= 'has-error' if f.object.errors.any? %>">
+      <td>
         <%= f.hidden_field :match, :class => 'match' %>
         <%= select_tag '', nil, :class => 'matcher_key' %>
-      </td>
-      <td class="col-md-3">
+        =
         <%= text_field_tag '', nil, :class => 'matcher_value' %>
       </td>
-      <td class="col-md-4">
+      <td>
         <%= f.text_area :value, :rows => line_count(f, :value), :class => 'form-control', :'data-property' => 'value',
                         :disabled => f.object.use_puppet_default,
                         :placeholder => _("Value") %>
       </td>
-      <td class="col-md-1">
+      <td class="ca">
         <%= f.check_box :use_puppet_default, :'data-property' => 'use_puppet_default',
                         :disabled => (not is_param),
                         :onchange => 'toggleUsePuppetDefaultValue(this, "value")' %>
       </td>
-      <td class="col-md-1">
+      <td>
           <span class="help-block">
             <%= link_to_remove_fields('', f) %>
           </span>
       </td>
     </tr>
     <% if f.object.errors.any? %>
-        <tr>
+        <tr class="has-error">
           <td colspan="5">
         <span class="help-block">
           <%= f.object.errors.full_messages.to_sentence %>
@@ -35,6 +33,7 @@
           </td>
         </tr>
     <% end %>
-    </tbody>
-  </table>
-</div>
+<% if is_template %>
+    </table>
+<% end %>
+
