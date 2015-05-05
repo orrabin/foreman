@@ -9,7 +9,7 @@ class Hostgroup < ActiveRecord::Base
 
   validates_lengths_from_database :except => [:name]
   before_destroy EnsureNotUsedBy.new(:hosts)
-  has_many :hostgroup_classes
+  has_many :hostgroup_classes, :dependent => :destroy
   has_many :puppetclasses, :through => :hostgroup_classes, :dependent => :destroy
   validates :name, :presence => true
   validates :root_pass, :allow_blank => true, :length => {:minimum => 8, :message => _('should be 8 characters or more')}
@@ -18,7 +18,7 @@ class Hostgroup < ActiveRecord::Base
   include ParameterValidators
   has_many_hosts :after_add => :update_puppetclasses_total_hosts,
                  :after_remove => :update_puppetclasses_total_hosts
-  #has_many :template_combinations, :dependent => :destroy
+  has_many :template_combinations, :dependent => :destroy
   has_many :config_templates, :through => :template_combinations
 
   include CounterCacheFix
