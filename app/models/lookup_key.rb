@@ -1,3 +1,5 @@
+require "parameters/caster"
+
 class LookupKey < ActiveRecord::Base
   include Authorizable
   include CounterCacheFix
@@ -37,7 +39,7 @@ class LookupKey < ActiveRecord::Base
   validates :puppetclass, :presence => true, :unless => Proc.new {|k| k.is_param?}
   validates :validator_type, :inclusion => { :in => VALIDATOR_TYPES, :message => N_("invalid")}, :allow_blank => true, :allow_nil => true
   validates :key_type, :inclusion => {:in => KEY_TYPES, :message => N_("invalid")}, :allow_blank => true, :allow_nil => true
-  validate :validate_list, :validate_regexp
+  validate :validate_default_value
   validates_associated :lookup_values
   validate :ensure_type, :disable_merge_overrides, :disable_avoid_duplicates
 
@@ -220,7 +222,7 @@ class LookupKey < ActiveRecord::Base
   def validate_and_cast_default_value
     return true if default_value.nil? || contains_erb?(default_value)
     begin
-      self.default_value = cast_validate_value self.default_value
+      Parameters::Caster.new(self, :attribute_name => :default_value, :to => key_type.to_s.to_sym).cast!
       true
     rescue
       errors.add(:default_value, _("is invalid"))
@@ -299,18 +301,11 @@ class LookupKey < ActiveRecord::Base
     end
   end
 
-  def validate_regexp
-    return true if (validator_type != 'regexp' || (contains_erb?(default_value) && Setting[:interpolate_erb_in_parameters]))
-    valid = (default_value =~ /#{validator_rule}/)
-    errors.add(:default_value, _("is invalid")) unless valid
-    valid
-  end
-
-  def validate_list
-    return true if (validator_type != 'list' || (contains_erb?(default_value) && Setting[:interpolate_erb_in_parameters]))
-    valid = validator_rule.split(KEY_DELM).map(&:strip).include?(default_value)
-    errors.add(:default_value, _("%{default_value} is not one of %{validator_rule}") % { :default_value => default_value, :validator_rule => validator_rule }) unless valid
-    valid
+  def validate_default_value
+    Parameters::Validator.new(self,
+      :type => validator_type,
+      :validate_with => validator_rule,
+      :getter => :default_value).validate!
   end
 
   def disable_merge_overrides

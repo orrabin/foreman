@@ -11,7 +11,7 @@ class LookupValue < ActiveRecord::Base
   delegate :key, :to => :lookup_key
   before_validation :sanitize_match
   before_validation :validate_and_cast_value
-  validate :validate_list, :validate_regexp, :ensure_fqdn_exists, :ensure_hostgroup_exists
+  validate :validate_value, :ensure_fqdn_exists, :ensure_hostgroup_exists
 
   attr_accessor :host_or_hostgroup, :matcher_key, :matcher_value
 
@@ -69,18 +69,11 @@ class LookupValue < ActiveRecord::Base
     end
   end
 
-  def validate_regexp
-    return true if (lookup_key.validator_type != 'regexp' || (lookup_key.contains_erb?(value) && Setting[:interpolate_erb_in_parameters]))
-    valid = (value =~ /#{lookup_key.validator_rule}/)
-    errors.add(:value, _("is invalid")) unless valid
-    valid
-  end
-
-  def validate_list
-    return true if (lookup_key.validator_type != 'list' || (lookup_key.contains_erb?(value) && Setting[:interpolate_erb_in_parameters]))
-    valid = lookup_key.validator_rule.split(LookupKey::KEY_DELM).map(&:strip).include?(value)
-    errors.add(:value, _("%{value} is not one of %{rules}") % { :value => value, :rules => lookup_key.validator_rule }) unless valid
-    valid
+  def validate_value
+    Parameters::Validator.new(self,
+      :type => lookup_key.validator_type,
+      :validate_with => lookup_key.validator_rule,
+      :getter => :value).validate!
   end
 
   def ensure_fqdn_exists
