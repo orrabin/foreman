@@ -33,19 +33,17 @@
                             :class => "overriding-value col-md-5",
                             :rows => 1,
                             :placeholder => _("Value")) %>
-              <span class="hidden_value">
+              <label class="hidden_value">
                 <%= check_box_tag "host[lookup_values_attributes][#{key.id}][hidden]" %>
-                Hidden
-              </span>
+                <%=_("Hidden")%>
+              </label>
 
-              <span class="puppet-default">
+              <label class="puppet-default">
                 <%= check_box_tag "host[lookup_values_attributes][#{key.id}][use_puppet_default]", nil, value.try(:use_puppet_default) %>
-                Use Puppet Default
-              </span>
+                <%= _("Use Puppet default") %>
+              </label>
           </td>
           <td>
-            <%= link_to(_("edit"), nil, :title => _("Edit this value"),
-                                 :'data-tag' => 'edit', :class => "btn btn-default edit_override_button" ) if authorized_via_my_scope("host_editing", "create_params") %>
             <%= link_to(_("remove"), nil, :title => _("Remove this value"),
                                  :'data-tag' => 'remove', :class => "btn btn-default remove_override_button" ) if authorized_via_my_scope("host_editing", "create_params") %>
           </td>

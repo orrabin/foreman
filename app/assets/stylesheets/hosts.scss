@@ -42,7 +42,7 @@
     display: none;
   }
   &.overridden {
-    span {
+    span, input, textarea {
       text-decoration: line-through
     }
     background: #ddd;
@@ -61,5 +61,8 @@
   display: none;
   &.visible {
     display: table-row;
+  }
+  label {
+    font-weight: normal;
   }
 }
