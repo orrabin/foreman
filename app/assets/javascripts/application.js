@@ -21,6 +21,7 @@
 //= require select2
 //= require underscore
 //= require editor
+//= require jquery.tocify.min
 
 $(document).on('ContentLoad', onContentLoad);
 Turbolinks.enableProgressBar();

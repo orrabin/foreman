@@ -5,7 +5,8 @@
       <%= content_tag :td, (i == 0 ? {:rowspan => lookup_keys.size} : {:class => 'hide'}) do
         # In order to use the class .hide-first-col, we must have an extra, invisible cell.
         # Plus, we make the class name available from javascript without having to look at any previous row.
-        content_tag :span, trunc_with_tooltip(puppetclass.name, 20), :'data-property' => 'class'
+        selector = i == 0 ? :h5 : :span
+        content_tag selector, puppetclass.name, :'data-property' => 'class', :class => 'ellipsis'
       end %>
       <td>
         <%= content_tag :span, trunc_with_tooltip(key.key, 20), :class => "#{"override-param" if key.overridden?(obj)}", :'data-property' => 'name' %></td>

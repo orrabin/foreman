@@ -1,4 +1,4 @@
-<%= javascript 'hosts', 'host_edit', 'host_edit_interfaces', 'class_edit', 'compute_resource', 'lookup_keys'%>
+<%= javascript 'hosts', 'host_edit', 'host_edit_interfaces', 'class_edit', 'compute_resource', 'lookup_keys', 'jquery.tocify.min'%>
 <%= render "hosts/dhcp_lease_errors" if has_dhcp_lease_errors?(@host.errors) %>
 <%= render "hosts/conflicts" if (!has_dhcp_lease_errors?(@host.errors) && has_conflicts?(@host.errors)) %>
 <%= render "hosts/progress" %>
@@ -101,20 +101,23 @@
 
       <%= render('hosts/unattended', :f => f) if SETTINGS[:unattended] and @host.managed %>
 
-      <div class="tab-pane"  id="params">
-        <fieldset>
-          <legend><%= _('Puppet classes parameters') %></legend>
-          <%= render "puppetclasses/classes_parameters", { :obj => @host } %>
-          <h4><%= _('Puppet class overrides') %></h4>
-          <%= render "common_parameters/puppetclasses_parameters", :f => f %>
-        </fieldset>
-        <br/>
-        <fieldset>
-          <legend><%= _('Global parameters') %></legend>
-          <%= render "common_parameters/inherited_parameters", { :inherited_parameters => @host.host_inherited_params(true) } %>
-          <h4><%= _('Host parameters') %></h4>
-          <%= render "common_parameters/parameters", { :f => f, :type => :host_parameters } %>
-        </fieldset>
+      <div class="tab-pane" id="params">
+        <div id="toc" class="col-md-2"></div>
+        <div id="param_table" class="col-md-10">
+          <fieldset>
+            <legend><%= _('Puppet classes parameters') %></legend>
+            <%= render "puppetclasses/classes_parameters", { :obj => @host } %>
+            <h4><%= _('Puppet class overrides') %></h4>
+            <%= render "common_parameters/puppetclasses_parameters", :f => f %>
+          </fieldset>
+          <br/>
+          <fieldset>
+            <legend><%= _('Global parameters') %></legend>
+            <%= render "common_parameters/inherited_parameters", { :inherited_parameters => @host.host_inherited_params(true) } %>
+            <h4><%= _('Host parameters') %></h4>
+            <%= render "common_parameters/parameters", { :f => f, :type => :host_parameters } %>
+          </fieldset>
+        </div>
       </div>
 
       <div class="tab-pane"  id="info">
@@ -139,3 +142,10 @@
     <%= submit_or_cancel f, @host.overwrite?, :cancel_path => @host.new_record? || !@host.name_changed? ? @host : edit_host_path(@host.name_was) %>
   <% end %>
 <% end %>
+
+<script type="text/javascript">
+    $(function() {
+        //Calls the tocify method on your HTML div.
+        $("#toc").tocify({context: '#param_table', scrollTo: '20', selectors: "legend, h4, h5"});
+    });
+</script>
