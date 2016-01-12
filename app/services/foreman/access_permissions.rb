@@ -393,6 +393,9 @@ Foreman::AccessControl.map do |permission_set|
     map.permission :edit_classes,   {:host_editing => [:edit_classes],
                                      :"api/v2/host_classes" => [:index, :create, :destroy]
                                     }
+    map.permission :view_params,  {:host_editing => [:view_params],
+                                     :"api/v2/parameters" => [:show]
+                                 }
     map.permission :create_params,  {:host_editing => [:create_params],
                                      :"api/v2/parameters" => [:create]
     }
