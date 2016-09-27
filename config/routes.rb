@@ -78,9 +78,9 @@ Foreman::Application.routes.draw do
         get 'out_of_sync'
         get 'errors'
         get 'disabled'
-        post 'current_parameters'
+        patch 'current_parameters'
         post 'puppetclass_parameters'
-        post 'process_hostgroup'
+        patch 'process_hostgroup'
         post 'process_taxonomy'
         post 'hostgroup_or_environment_selected'
         post 'architecture_selected'
@@ -126,6 +126,13 @@ Foreman::Application.routes.draw do
     end
 
     get 'parent_facts/:parent_fact/facts', :to => 'fact_values#index', :as => 'parent_fact_facts'
+
+    resources :global_lookup_keys do
+      collection do
+        get 'auto_complete_search'
+      end
+    end
+
     resources :facts, :only => [:index, :show] do
       constraints(:id => /[^\/]+/) do
         resources :values, :only => :index, :controller => :fact_values, :as => "host_fact_values"
@@ -140,7 +147,7 @@ Foreman::Application.routes.draw do
       get 'auto_complete_search'
     end
   end
-  resources :common_parameters, :except => [:show] do
+  resources :global_lookup_keys, :except => [:show] do
     collection do
       get 'auto_complete_search'
     end

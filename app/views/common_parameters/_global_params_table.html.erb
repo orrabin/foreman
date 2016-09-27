@@ -1,0 +1,11 @@
+<table class="table table-condensed" id="global_parameters_table">
+  <thead>
+  <tr>
+    <th class='col-md-3'><%= _("Name") %></th>
+    <th class='col-md-8'><%= _("Value") %></th>
+  </tr>
+  </thead>
+  <tbody>
+  <%= render :partial => "puppetclasses/class_parameters", :locals => { :obj => obj, :lookup_keys => lookup_keys } %>
+  </tbody>
+</table>

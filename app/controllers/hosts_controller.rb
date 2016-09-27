@@ -106,7 +106,6 @@ class HostsController < ApplicationController
     forward_url_options
     Taxonomy.no_taxonomy_scope do
       attributes = @host.apply_inherited_attributes(host_params)
-
       if @host.update_attributes(attributes)
         process_success :success_redirect => host_path(@host)
       else
@@ -170,7 +169,9 @@ class HostsController < ApplicationController
 
   def current_parameters
     Taxonomy.as_taxonomy @organization, @location do
-      render :partial => "common_parameters/inherited_parameters", :locals => {:inherited_parameters => refresh_host.host_inherited_params(true), :parameters => refresh_host.host_parameters}
+      host_parameters_hash = Classification::NonPuppetParam.new(:host=>refresh_host).values_hash
+      lookup_keys = GlobalLookupKey.where(:id => host_parameters_hash.try(:keys))
+      render :partial => "common_parameters/global_params_table", :locals => {:obj => refresh_host, :lookup_keys => lookup_keys}
     end
   end
 
@@ -362,7 +363,7 @@ class HostsController < ApplicationController
   # multiple host selection methods
 
   def multiple_parameters
-    @parameters = HostParameter.where(:reference_id => @hosts).select("distinct name")
+    @parameters = LookupValue.globals.where(:match => @hosts.pluck(:lookup_value_matcher)).select("distinct key")
   end
 
   def update_multiple_parameters
@@ -378,7 +379,8 @@ class HostsController < ApplicationController
       skipped = []
       params[:name].each do |name, value|
         next if value.empty?
-        if (host_param = host.host_parameters.friendly.find(name))
+        host_param = host.lookup_values.detect{|lv| lv.key == name && lv.lookup_key.type == 'GlobalLookupKey'}
+        if host_param
           counter += 1 if host_param.update_attribute(:value, value)
         else
           skipped << name
@@ -679,7 +681,7 @@ class HostsController < ApplicationController
   # renders only resulting templates set so the rest of form is unaffected
   def template_used
     host = params[:id] ? Host.readonly.find(params[:id]) : Host.new
-    host.attributes = host_params.select { |k,v| !k.end_with?('_ids') }.except(:host_parameters_attributes)
+    host.attributes = host_params.select { |k,v| !k.end_with?('_ids') }.except(:lookup_values_attributes)
     templates = host.available_template_kinds(params[:provisioning])
     return not_found if templates.empty?
     render :partial => 'provisioning', :locals => { :templates => templates }

@@ -13,6 +13,7 @@ class Subnet < ActiveRecord::Base
   include Taxonomix
   include Parameterizable::ByIdName
   include Exportable
+  include LookupValueConnector
 
   attr_exportable :name, :network, :mask, :gateway, :dns_primary, :dns_secondary, :from, :to, :boot_mode,
     :ipam, :vlanid, :network_type
@@ -42,9 +43,6 @@ class Subnet < ActiveRecord::Base
   belongs_to :dns,  :class_name => "SmartProxy"
   has_many :subnet_domains, :dependent => :destroy, :inverse_of => :subnet
   has_many :domains, :through => :subnet_domains
-  has_many :subnet_parameters, :dependent => :destroy, :foreign_key => :reference_id, :inverse_of => :subnet
-  has_many :parameters, :dependent => :destroy, :foreign_key => :reference_id, :class_name => "SubnetParameter"
-  accepts_nested_attributes_for :subnet_parameters, :allow_destroy => true
   validates :network, :mask, :name, :cidr, :presence => true
   validates_associated :subnet_domains
   validates :boot_mode, :inclusion => BOOT_MODES.values
@@ -72,7 +70,6 @@ class Subnet < ActiveRecord::Base
                         :vlanid, :ipam, :boot_mode, :type], :complete_value => true
 
   scoped_search :in => :domains, :on => :name, :rename => :domain, :complete_value => true
-  scoped_search :in => :subnet_parameters, :on => :value, :on_key=> :name, :complete_value => true, :only_explicit => true, :rename => :params
 
   delegate :supports_ipam_mode?, :supported_ipam_modes, :show_mask?, to: 'self.class'
 
@@ -100,6 +97,10 @@ class Subnet < ActiveRecord::Base
 
   def network_type=(value)
     self[:type] = SUBNET_TYPES.key(value)
+  end
+
+  def lookup_value_match
+    "subnet=#{self.to_s}"
   end
 
   # Subnets are sorted on their priority value
