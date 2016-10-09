@@ -30,7 +30,9 @@ class Chart extends React.Component {
   }
 
   componentWillUnmount() {
-    this.chart = this.chart.destroy();
+    if (this.hasData()) {
+      this.chart = this.chart.destroy();
+    }
   }
 
   render() {
