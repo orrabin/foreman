@@ -10,6 +10,8 @@ import StatisticsChartBox from
 '../assets/javascripts/react_app/components/charts/StatisticsChartBox';
 import Search from '../assets/javascripts/react_app/components/common/Search';
 import Toast from '../assets/javascripts/react_app/components/notifications/Toast';
+import ParameterContainer from
+'../assets/javascripts/react_app/components/parameters/ParameterContainer';
 
 addDecorator((story) => (
   <div className="ca" style={{textAlign: 'center'}}>
@@ -17,6 +19,18 @@ addDecorator((story) => (
     <div id="targetChart"></div>
   </div>
 ));
+
+storiesOf('Parameters', module)
+  .add('New Parameter', () => (
+    <ParameterContainer name="hello"/>
+  ))
+  .add('New Secret Parameter', () => (
+    <ParameterContainer type="password" />
+  ))
+  .add('Edit Parameter', () => (
+    <ParameterContainer name="key" value="value123" />
+  )
+);
 
 storiesOf('Search', module)
   .add('Initial State', () => (
