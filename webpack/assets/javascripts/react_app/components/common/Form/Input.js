@@ -1,5 +1,6 @@
 import React from 'react';
-import {FormGroup, ControlLabel, FormControl } from 'react-bootstrap';
+import {FormGroup, ControlLabel, FormControl, HelpBlock } from 'react-bootstrap';
+import './Input.css';
 
 const Input = ({
   id = Date.now(),
@@ -8,12 +9,14 @@ const Input = ({
   type = 'text',
   srOnly = true,
   placeholder,
-  valueChanged
+  valueChanged,
+  valueValidation,
+  validator
 }) => {
 
   return (
-      <FormGroup
-        controlId={id + label} >
+      <FormGroup className="form-inline"
+        controlId={id + label} validationState={validator} >
 
         <ControlLabel srOnly={srOnly}>{label}</ControlLabel>
         <FormControl
@@ -22,6 +25,7 @@ const Input = ({
           value={value}
           placeholder={placeholder}
         />
+        <HelpBlock>{valueValidation}</HelpBlock>
       </FormGroup>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import Input from '../common/Form/Input';
+import '../common/Form/Input.css';
 
 const Parameter = ({
   name,
@@ -8,12 +9,22 @@ const Parameter = ({
   type = 'text',
   nameChanged,
   valueChanged,
+  nameValidation,
+  valueValidation,
   errors = {}
  }) => {
 
-  // const validator = (context) => {
-  //   return (name.length > 1 ? 'success' : 'warning');
-  // };
+  const validator = (context) => {
+   if (name.length > 256) {
+     nameValidation = 'name is too long'
+     return 'error'
+   }
+   else if (name.length < 1) {
+     nameValidation = 'name is too short'
+     return 'error'
+   }
+  };
+
   const nameLabel = 'Name';
   const valueLabel = 'Value';
 
@@ -26,6 +37,8 @@ const Parameter = ({
         valueChanged = {nameChanged}
         value = {name}
         placeholder = {nameLabel}
+        validator={validator()}
+        valueValidation = {nameValidation}
         />
 
       <Input
