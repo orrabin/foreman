@@ -5,10 +5,15 @@ import helpers from '../../common/helpers';
 class ParameterContainer extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {name: this.props.name, value: this.props.value, type: this.props.type};
+    this.state = {
+      name: this.props.name,
+      value: this.props.value,
+      type: this.props.type
+    };
     helpers.bindMethods(this, [
       'nameChanged',
-      'valueChanged']
+      'valueChanged',
+      'onSubmit']
     );
   }
   nameChanged(e) {
@@ -16,6 +21,10 @@ class ParameterContainer extends React.Component {
   }
   valueChanged(e) {
     this.setState({value: e.target.value});
+  }
+
+  onSubmit(e) {
+    e.preventDefault;
   }
 
   render() {
@@ -26,6 +35,7 @@ class ParameterContainer extends React.Component {
       type={this.state.type}
       nameChanged={this.nameChanged}
       valueChanged={this.valueChanged}
+      onSubmit={this.onSubmit}
     />);
   }
 }
