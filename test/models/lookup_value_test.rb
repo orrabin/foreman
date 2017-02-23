@@ -217,6 +217,7 @@ class LookupValueTest < ActiveSupport::TestCase
     lookup_key = FactoryGirl.create(:puppetclass_lookup_key, :key_type => 'boolean', :override => true,
                                     :default_value => "true", :description => 'description')
     lookup_value = FactoryGirl.build(:lookup_value, :lookup_key => lookup_key, :match => "os=fake", :value => '')
+    binding.pry
     refute lookup_value.valid?
   end
 

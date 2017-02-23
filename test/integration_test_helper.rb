@@ -14,19 +14,22 @@ DatabaseCleaner.strategy = :transaction
 
 Capybara.register_driver :poltergeist do |app|
   opts = {
-    # To enable debugging uncomment `:inspector => true` and
-    # add `page.driver.debug` in code to open webkit inspector
-    # :inspector => true
-    :js_errors => true,
-    :timeout => 60,
-    :extensions => ["#{Rails.root}/test/integration/support/poltergeist_onload_extensions.js"],
-    :phantomjs => File.join(Rails.root, 'node_modules', '.bin', 'phantomjs')
+      # To enable debugging uncomment `:inspector => true` and
+      # add `page.driver.debug` in code to open webkit inspector
+      # :inspector => true
+      :js_errors => true,
+      :timeout => 60,
+      :extensions => ["#{Rails.root}/test/integration/support/poltergeist_onload_extensions.js"]
   }
   Capybara::Poltergeist::Driver.new(app, opts)
 end
 
-Capybara.default_max_wait_time = 30
-Capybara.javascript_driver = :poltergeist
+Capybara.register_driver :selenium do |app|
+  Capybara::Selenium::Driver.new(app, browser: :chrome)
+end
+
+Capybara.default_max_wait_time = 100
+Capybara.javascript_driver = :selenium
 
 class ActionDispatch::IntegrationTest
   # Make the Capybara DSL available in all integration tests
@@ -129,6 +132,7 @@ class IntegrationTestWithJavascript < ActionDispatch::IntegrationTest
     DatabaseCleaner.strategy = :truncation
     DatabaseCleaner.start
     Capybara.current_driver = Capybara.javascript_driver
+    visit hosts_path
     super
   end
 end

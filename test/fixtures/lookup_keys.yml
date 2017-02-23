@@ -11,7 +11,7 @@ one:
 three:
   key: ssl
   key_type: Boolean
-  path: "fqdn\nhostgroup\nhostgroup,domain"
+  path: "fqdn\nhostgroup\nhostgroup,domain\nos"
   validator_rule:
   default_value: true
   override: true
