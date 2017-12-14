@@ -49,7 +49,7 @@ end
 
 # CRs in fog core with extra dependencies will have those deps loaded, so then
 # load the corresponding bit of fog
-require 'fog/ovirt' if defined?(::OVIRT)
+require 'fog/ovirt' if defined?(::OvirtSDK4)
 
 require_dependency File.expand_path('../../app/models/application_record.rb', __FILE__)
 require_dependency File.expand_path('../../lib/foreman.rb', __FILE__)
