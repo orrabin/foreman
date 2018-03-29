@@ -101,6 +101,21 @@ module Foreman::Model
       16.gigabytes
     end
 
+    def use_v4=(value)
+      value = case value
+              when true, '1'
+                true
+              else
+                false
+              end
+      self.attrs[:ovirt_use_v4] = value
+    end
+
+    def use_v4
+      self.attrs[:ovirt_use_v4] || false
+    end
+    alias_method :use_v4?, :use_v4
+
     def ovirt_quota=(ovirt_quota_id)
       self.attrs[:ovirt_quota_id] = ovirt_quota_id
     end
@@ -380,7 +395,8 @@ module Foreman::Model
         :ovirt_password   => password,
         :ovirt_url        => url,
         :ovirt_datacenter => uuid,
-        :ovirt_ca_cert_store => ca_cert_store(public_key)
+        :ovirt_ca_cert_store => ca_cert_store(public_key),
+        :api_version      => use_v4? ? 'v4' : 'v3'
       )
       client.datacenters
       @client = client
