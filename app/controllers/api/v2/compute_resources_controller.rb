@@ -50,11 +50,20 @@ module Api
         end
       end
 
-      def change_datacenter_to_uuid(datacenter)
-        if @compute_resource.respond_to?(:get_datacenter_uuid) && datacenter.present? && !Foreman.is_uuid?(datacenter)
+      def change_datacenter_and_quota_to_uuid(compute_resource_params)
+        datacenter = compute_resource_params[:datacenter]
+        quota = compute_resource_params[:ovirt_quota]
+
+        if @compute_resource.respond_to?(:get_datacenter_uuid)  && (!Foreman.is_uuid?(datacenter) || !Foreman.is_uuid?(quota))
           @compute_resource.test_connection
-          @compute_resource.get_datacenter_uuid(datacenter)
+
+          datacenter = @compute_resource.get_datacenter_uuid(datacenter) if datacenter.present?
+          quota =  @compute_resource.get_quota_uuid(quota) if quota.present?
+
+          return compute_resource_params.merge(:datacenter => datacenter, :ovirt_quota => quota)
         end
+
+        compute_resource_params
       end
 
       api :POST, "/compute_resources/", N_("Create a compute resource")
@@ -68,8 +77,9 @@ module Api
           return
         end
 
-        datacenter = change_datacenter_to_uuid(compute_resource_params[:datacenter])
-        @compute_resource.datacenter = datacenter if datacenter.present?
+        update_parameters = change_datacenter_and_quota_to_uuid(compute_resource_params)
+        @compute_resource.datacenter = update_parameters[:datacenter] if update_parameters[:datacenter].present?
+        @compute_resource.ovirt_quota = update_parameters[:ovirt_quota] if update_parameters[:ovirt_quota].present?
 
         process_response @compute_resource.save
       end
@@ -79,8 +89,7 @@ module Api
       param_group :compute_resource
 
       def update
-        datacenter = change_datacenter_to_uuid(compute_resource_params[:datacenter])
-        update_parameters = datacenter.present? ? compute_resource_params.merge(:datacenter => datacenter) : compute_resource_params
+        update_parameters = change_datacenter_and_quota_to_uuid(compute_resource_params)
         process_response @compute_resource.update(update_parameters)
       end
 

@@ -197,14 +197,27 @@ module Foreman::Model
       errors[:url].empty? && errors[:username].empty? && errors[:password].empty?
     end
 
+    def find_uuid_from_name(name, list)
+      return name if Foreman.is_uuid?(name)
+      uuid = list.detect {|dc| dc[0] == name}
+      raise ::Foreman::Exception.new(N_('Datacenter was not found')) if uuid.nil?
+      uuid[1]
+    end
+
     def datacenters(options = {})
       client.datacenters(options).map { |dc| [dc[:name], dc[:id]] }
     end
 
     def get_datacenter_uuid(name)
-      datacenter_uuid = datacenters.select {|dc| dc[0] == name}
-      raise ::Foreman::Exception.new(N_('Datacenter was not found')) if datacenter_uuid.empty?
-      datacenter_uuid.first[1]
+      find_uuid_from_name(name, datacenters)
+    end
+
+    def quotas(options = {})
+      client.quotas(options).map { |quota| [quota.name, quota.id] }
+    end
+
+    def get_quota_uuid(name)
+      find_uuid_from_name(name, quotas)
     end
 
     def editable_network_interfaces?

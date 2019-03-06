@@ -111,77 +111,124 @@ class Api::V2::ComputeResourcesControllerTest < ActionController::TestCase
     assert_not_empty available_images
   end
 
-  test "should get available networks" do
-    network = Object.new
-    network.stubs(:name).returns('test_network')
-    network.stubs(:id).returns('my11-test35-uuid99')
+  context 'ovirt' do
+    test "should get available networks" do
+      network = Object.new
+      network.stubs(:name).returns('test_network')
+      network.stubs(:id).returns('my11-test35-uuid99')
 
-    Foreman::Model::Ovirt.any_instance.stubs(:available_networks).returns([network])
+      Foreman::Model::Ovirt.any_instance.stubs(:available_networks).returns([network])
 
-    get :available_networks, params: { :id => compute_resources(:ovirt).to_param, :cluster_id => '123-456-789' }
-    assert_response :success
-    available_networks = ActiveSupport::JSON.decode(@response.body)
-    assert !available_networks.empty?
-  end
+      get :available_networks, params: {:id => compute_resources(:ovirt).to_param, :cluster_id => '123-456-789'}
+      assert_response :success
+      available_networks = ActiveSupport::JSON.decode(@response.body)
+      assert !available_networks.empty?
+    end
 
-  test "should get available clusters" do
-    cluster = Object.new
-    cluster.stubs(:name).returns('test_cluster')
-    cluster.stubs(:id).returns('my11-test35-uuid99')
+    test "should get available clusters" do
+      cluster = Object.new
+      cluster.stubs(:name).returns('test_cluster')
+      cluster.stubs(:id).returns('my11-test35-uuid99')
 
-    Foreman::Model::Ovirt.any_instance.stubs(:available_clusters).returns([cluster])
+      Foreman::Model::Ovirt.any_instance.stubs(:available_clusters).returns([cluster])
 
-    get :available_clusters, params: { :id => compute_resources(:ovirt).to_param }
-    assert_response :success
-    available_clusters = ActiveSupport::JSON.decode(@response.body)
-    assert !available_clusters.empty?
-  end
+      get :available_clusters, params: {:id => compute_resources(:ovirt).to_param}
+      assert_response :success
+      available_clusters = ActiveSupport::JSON.decode(@response.body)
+      assert !available_clusters.empty?
+    end
 
-  test "should get available storage domains" do
-    storage_domain = Object.new
-    storage_domain.stubs(:name).returns('test_cluster')
-    storage_domain.stubs(:id).returns('my11-test35-uuid99')
+    test "should get available storage domains" do
+      storage_domain = Object.new
+      storage_domain.stubs(:name).returns('test_cluster')
+      storage_domain.stubs(:id).returns('my11-test35-uuid99')
 
-    Foreman::Model::Ovirt.any_instance.stubs(:available_storage_domains).returns([storage_domain])
+      Foreman::Model::Ovirt.any_instance.stubs(:available_storage_domains).returns([storage_domain])
 
-    get :available_storage_domains, params: { :id => compute_resources(:ovirt).to_param }
-    assert_response :success
-    available_storage_domains = ActiveSupport::JSON.decode(@response.body)
-    assert !available_storage_domains.empty?
-  end
+      get :available_storage_domains, params: {:id => compute_resources(:ovirt).to_param}
+      assert_response :success
+      available_storage_domains = ActiveSupport::JSON.decode(@response.body)
+      assert !available_storage_domains.empty?
+    end
 
-  test "should create with datacenter name" do
-    Foreman::Model::Ovirt.any_instance.stubs(:datacenters).returns([["test", Foreman.uuid]])
-    Foreman::Model::Ovirt.any_instance.stubs(:test_connection).returns(true)
+    test "should create with datacenter name" do
+      Foreman::Model::Ovirt.any_instance.stubs(:datacenters).returns([["test", Foreman.uuid]])
+      Foreman::Model::Ovirt.any_instance.stubs(:test_connection).returns(true)
 
-    attrs = { :name => 'Ovirt-create-test', :url => 'https://myovirt/api', :provider => 'ovirt', :datacenter => 'test', :user => 'user@example.com', :password => 'secret' }
-    post :create, params: { :compute_resource => attrs }
-    assert_response :created
-    show_response = ActiveSupport::JSON.decode(@response.body)
-    assert Foreman.is_uuid?(show_response["datacenter"])
-  end
+      attrs = {:name => 'Ovirt-create-test', :url => 'https://myovirt/api', :provider => 'ovirt', :datacenter => 'test', :user => 'user@example.com', :password => 'secret'}
+      post :create, params: {:compute_resource => attrs}
+      assert_response :created
+      show_response = ActiveSupport::JSON.decode(@response.body)
+      assert Foreman.is_uuid?(show_response["datacenter"])
+    end
 
-  test "should create with datacenter uuid" do
-    datacenter_uuid = Foreman.uuid
-    Foreman::Model::Ovirt.any_instance.stubs(:datacenters).returns([["test", datacenter_uuid]])
+    test "should create with datacenter uuid" do
+      datacenter_uuid = Foreman.uuid
+      Foreman::Model::Ovirt.any_instance.stubs(:datacenters).returns([["test", datacenter_uuid]])
 
-    attrs = { :name => 'Ovirt-create-test', :url => 'https://myovirt/api', :provider => 'ovirt', :datacenter => datacenter_uuid, :user => 'user@example.com', :password => 'secret' }
-    post :create, params: { :compute_resource => attrs }
-    assert_response :created
-    show_response = ActiveSupport::JSON.decode(@response.body)
-    assert Foreman.is_uuid?(show_response["datacenter"])
-  end
+      attrs = {:name => 'Ovirt-create-test', :url => 'https://myovirt/api', :provider => 'ovirt', :datacenter => datacenter_uuid, :user => 'user@example.com', :password => 'secret'}
+      post :create, params: {:compute_resource => attrs}
+      assert_response :created
+      show_response = ActiveSupport::JSON.decode(@response.body)
+      assert Foreman.is_uuid?(show_response["datacenter"])
+    end
 
-  test "should update with datacenter name" do
-    compute_resource = compute_resources(:ovirt)
-    Foreman::Model::Ovirt.any_instance.stubs(:datacenters).returns([["test", Foreman.uuid]])
-    Foreman::Model::Ovirt.any_instance.stubs(:test_connection).returns(true)
+    test "should update with datacenter name" do
+      compute_resource = compute_resources(:ovirt)
+      Foreman::Model::Ovirt.any_instance.stubs(:datacenters).returns([["test", Foreman.uuid]])
+      Foreman::Model::Ovirt.any_instance.stubs(:test_connection).returns(true)
 
-    attrs = { :datacenter => 'test' }
-    post :update, params: { :id => compute_resource.id, :compute_resource => attrs }
-    assert_response :created
-    show_response = ActiveSupport::JSON.decode(@response.body)
-    assert Foreman.is_uuid?(show_response["datacenter"])
+      attrs = {:datacenter => 'test'}
+      post :update, params: {:id => compute_resource.id, :compute_resource => attrs}
+      assert_response :created
+      show_response = ActiveSupport::JSON.decode(@response.body)
+      assert Foreman.is_uuid?(show_response["datacenter"])
+    end
+
+    test "should create with quota name" do
+      Foreman::Model::Ovirt.any_instance.stubs(:quotas).returns([["test", Foreman.uuid]])
+      Foreman::Model::Ovirt.any_instance.stubs(:test_connection).returns(true)
+
+      attrs = {:name => 'Ovirt-create-test', :url => 'https://myovirt/api', :provider => 'ovirt', :datacenter => Foreman.uuid, :user => 'user@example.com', :password => 'secret', :ovirt_quota => 'test'}
+      post :create, params: {:compute_resource => attrs}
+      assert_response :created
+      show_response = ActiveSupport::JSON.decode(@response.body)
+      assert Foreman.is_uuid?(show_response["ovirt_quota"])
+    end
+
+    test "should create with quota name v4" do
+      Foreman::Model::Ovirt.any_instance.stubs(:quotas).returns([["test", Foreman.uuid]])
+      Foreman::Model::Ovirt.any_instance.stubs(:test_connection).returns(true)
+
+      attrs = {:name => 'Ovirt-create-test', :url => 'https://myovirt/api', :provider => 'ovirt', :use_v4 => true, :datacenter => Foreman.uuid, :user => 'user@example.com', :password => 'secret', :ovirt_quota => 'test'}
+      post :create, params: {:compute_resource => attrs}
+      assert_response :created
+      show_response = ActiveSupport::JSON.decode(@response.body)
+      assert Foreman.is_uuid?(show_response["ovirt_quota"])
+    end
+
+    test "should create with quota uuid" do
+      quota_uuid = Foreman.uuid
+      Foreman::Model::Ovirt.any_instance.stubs(:quotas).returns([["test", quota_uuid]])
+
+      attrs = {:name => 'Ovirt-create-test', :url => 'https://myovirt/api', :provider => 'ovirt', :datacenter => Foreman.uuid, :user => 'user@example.com', :password => 'secret', :ovirt_quota => quota_uuid}
+      post :create, params: {:compute_resource => attrs}
+      assert_response :created
+      show_response = ActiveSupport::JSON.decode(@response.body)
+      assert Foreman.is_uuid?(show_response["ovirt_quota"])
+    end
+
+    test "should update with quota name" do
+      compute_resource = compute_resources(:ovirt)
+      Foreman::Model::Ovirt.any_instance.stubs(:quotas).returns([["test", Foreman.uuid]])
+      Foreman::Model::Ovirt.any_instance.stubs(:test_connection).returns(true)
+
+      attrs = {:ovirt_quota => 'test'}
+      post :update, params: {:id => compute_resource.id, :compute_resource => attrs}
+      assert_response :created
+      show_response = ActiveSupport::JSON.decode(@response.body)
+      assert Foreman.is_uuid?(show_response["ovirt_quota"])
+    end
   end
 
   context 'cache refreshing' do
